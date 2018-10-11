@@ -69,9 +69,15 @@ This technique seems to be limited to text-based streams. Ideally, we would like
 
 ```powershell
 #Create data structure to hold FileInfo objects
-$list = [System.Collections.ArrayList]@()
-#Recursively iterate over all files in the current directory, retrieve any that are not the default data stream (:$DATA), and add these to the list
-$list.Add(Get-ChildItem C:\* -Recurse | Get-Item -Stream * | Where-Object {$_.Stream -ne ':$DATA'})
-#Print out all of the Alternate Data Streams and their length
-$list | Select-Object PSChildName,Length
+param([string]$drive = "C:\", [string]$path="")
+
+if ($path.Length -eq 0){
+ $path= "ADS_" + $(Get-Date -Format FileDateTime) + ".txt"
+}
+
+Get-ChildItem $drive* -Recurse -ErrorAction SilentlyContinue |
+    Get-Item -Stream * -ErrorAction SilentlyContinue |
+    Where-Object {$_.Stream -ne ':$DATA' -and $_.Stream -ne 'Zone.Identifier'} |
+    Format-Table -Wrap -AutoSize -Property filename,pschildname,length |
+    Tee-Object -Append -FilePath $path
 ```
