@@ -15,7 +15,9 @@ After completing this lab, you will:
 
 [Modern ADS techniques](https://oddvar.moe/2018/04/11/putting-data-in-alternate-data-streams-and-how-to-execute-it-part-2/)
 
-## Notes
+## Notes & Activity
+
+### 2.1 NTFS Alternate Data Streams
 
 * The commands in the lab did not work for me, so I sought out a different method for manipulating Alternate Data Streams (see Modern ADS techniques link above)
 
@@ -57,5 +59,19 @@ This technique seems to be limited to text-based streams. Ideally, we would like
 4. Use *wmic* to execute the Alternate Data Stream:
 
     ```powershell
+    # Make sure to use the FULL path, otherwise this won't work
     wmic process call create $FullPathToFile\TargetFile:MaliciousStream.exe
     ```
+
+### 2.2 Examining Windows Logs
+
+### 2.3 Finding Alternate Data Streams w/Powershell
+
+```powershell
+#Create data structure to hold FileInfo objects
+$list = [System.Collections.ArrayList]@()
+#Recursively iterate over all files in the current directory, retrieve any that are not the default data stream (:$DATA), and add these to the list
+$list.Add(Get-ChildItem C:\* -Recurse | Get-Item -Stream * | Where-Object {$_.Stream -ne ':$DATA'})
+#Print out all of the Alternate Data Streams and their length
+$list | Select-Object PSChildName,Length
+```
