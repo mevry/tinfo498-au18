@@ -68,16 +68,23 @@ This technique seems to be limited to text-based streams. Ideally, we would like
 ### 2.3 Finding Alternate Data Streams w/Powershell
 
 ```powershell
-#Create data structure to hold FileInfo objects
-param([string]$drive = "C:\", [string]$path="")
-
-if ($path.Length -eq 0){
- $path= "ADS_" + $(Get-Date -Format FileDateTime) + ".txt"
+#Custom parameters if desired
+param(
+    [string]$SearchPath = "C:\*",
+    [string]$OutputFile="",
+)
+#Creates filename w/datestamp if no filename specified
+if ($OutputFile.Length -eq 0){
+    $OutputFile= ".\ADS_" + $(Get-Date -Format FileDateTime) + ".csv"
 }
-
-Get-ChildItem $drive* -Recurse -ErrorAction SilentlyContinue |
+#Recursively searches directory tree and filters the following streams:
+# :$DATA (Default), Zone.Identifier, encryptable, and SummaryInformation
+# *These streams may be of interest, so this should be customized as needed
+Get-ChildItem $SearchPath -Recurse -ErrorAction SilentlyContinue |
     Get-Item -Stream * -ErrorAction SilentlyContinue |
-    Where-Object {$_.Stream -ne ':$DATA' -and $_.Stream -ne 'Zone.Identifier'} |
-    Format-Table -Wrap -AutoSize -Property filename,pschildname,length |
-    Tee-Object -Append -FilePath $path
+    Where-Object {$_.Stream -ne ':$DATA' -and $_.Stream -ne 'Zone.Identifier' -and $_.Stream -ne 'encryptable' -and $_.Stream -ne 'SummaryInformation'} |
+    Select-Object -Property filename,pschildname,length |
+    ConvertTo-Csv |
+    Tee-Object -FilePath $OutputFile |
+    ConvertFrom-Csv
 ```
